@@ -41,7 +41,7 @@ sequenceDiagram
     participant CFG as marp_core.config
     participant GEN as slide.generator
     participant OAI as OpenAI API
-    participant OPT as slide.diagram_optimizer
+    participant DOPT as slide.diagram_optimizer
     participant REN as slide.renderer
     participant IQ as image.query_generator
     participant IF as image.fetcher
@@ -66,8 +66,8 @@ sequenceDiagram
         GEN->>OAI: chat.completions.create(...)
         OAI-->>GEN: JSON slide plan
         GEN->>GEN: ensure first slide is title
-        GEN->>OPT: optimize_diagram_placement(plan)
-        OPT-->>GEN: adjusted plan
+        GEN->>DOPT: optimize_diagram_placement(plan)
+        DOPT-->>GEN: adjusted plan
         GEN-->>CLI: slide plan
 
         CLI->>REN: render_marpit_markdown(plan, topic)
