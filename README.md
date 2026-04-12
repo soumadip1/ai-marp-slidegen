@@ -226,7 +226,6 @@ marp-generator/
 For a visual version of the runtime project layout, see:
 
 - [Project Structure Diagram](project-structure.md)
-- [Raw Mermaid Source](project-structure.mmd)
 
 ---
 
