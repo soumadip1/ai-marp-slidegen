@@ -27,8 +27,7 @@ Give it a topic and it returns a fully styled `.pptx` file — with downloaded s
 4. Mermaid diagrams are rendered to PNG via `mmdc`.
 5. A Marp-flavoured Markdown file is assembled and saved.
 6. Marp CLI converts the Markdown to a fully styled `.pptx` file.
-
-   [Detailed "How It Works" Guide](md/HOW_IT_WORKS.md)
+7. [Detailed "How It Works" Guide](md/HOW_IT_WORKS.md)
 ---
 
 ## Prerequisites
