@@ -21,9 +21,8 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 UNSPLASH_API_KEY = os.getenv("UNSPLASH_API_KEY", "")
 
 # ========== OUTPUT DIRECTORIES ==========
-# Write output relative to the current working directory so the package works
-# correctly whether run from source or installed via pip.
-BASE_DIR = Path.cwd()
+# Write output relative to the marp-generator project root (parent of marp_core)
+BASE_DIR = Path(__file__).resolve().parent.parent
 PPT_DIR = BASE_DIR / "PPT"
 ASSETS_DIR = BASE_DIR / "assets"
 

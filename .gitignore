@@ -2,3 +2,5 @@
 *.mmd
 **/__pycache__/
 *.pyc
+assets/
+PPT/

@@ -8,6 +8,7 @@ from importlib import resources
 from openai import OpenAI
 from ..config import OPENAI_API_KEY
 from ..utils.text import sanitize_text
+from .diagram_optimizer import optimize_diagram_placement
 
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -66,5 +67,9 @@ def generate_slide_plan(topic):
             "chart": {"type": "", "labels": [], "values": []},
             "speaker_notes": "Title slide introducing the topic and setting visual tone."
         })
+
+    # Optimize diagram placement: defer diagrams from overcrowded slides to next slide
+    print("Optimizing diagram placement...")
+    plan = optimize_diagram_placement(plan)
 
     return plan

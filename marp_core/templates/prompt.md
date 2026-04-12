@@ -5,7 +5,7 @@ Create a structured JSON slide plan for the topic below.
 Topic: {topic}
 
 Rules:
-- Exactly 10 slides.
+- Generate 15-16 slides total (maximum capacity for a comprehensive presentation).
 - The first slide must be a title slide with type `title`.
 - Slide types can be: title, content, diagram, code, chart.
 - Each slide can include: title, subtitle, icon, bullets, diagram, code, chart, speaker_notes, image_query.

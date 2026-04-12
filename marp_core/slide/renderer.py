@@ -265,24 +265,21 @@ def render_marpit_markdown(slide_json, topic):
                         slide_lines.append(f"- {bullet_text}")
 
             # ========== MERMAID DIAGRAM PARSING ==========
-            # Smart diagram rendering: skip if content is already substantial
-            # If slide has 3+ bullets + a title, rendering a diagram may overflow
+            # Note: Diagram placement is already optimized by diagram_optimizer
+            # which moves diagrams from overcrowded slides to the next slide.
+            # Here we just render diagrams that are present, or skip if slide is still too full.
             num_bullets = min(len(bullets), 4)  # Max 4 bullets are rendered
             has_code = bool(code.get("content"))
             
             # Calculate content occupancy
-            # Code and bullets together indicate a full slide
-            # But if there's a diagram, prioritize it (replace code, not bullets)
             if diagram and is_valid_mermaid(diagram):
                 # Slide has a diagram - use it as main content
-                # Don't skip diagram when it's the focus of the slide
-                content_volume = num_bullets  # Don't count code when diagram is present
+                content_volume = num_bullets
             else:
-                # No diagram - count code heavily (takes space)
+                # No diagram - count code and other content
                 content_volume = num_bullets + (2 if has_code else 0) + (1 if subtitle else 0)
             
-            # If content_volume >= 5, skip large diagram to prevent overflow
-            # Reason: 4+ bullets already takes ~70-80% of slide height
+            # Skip diagram only if slide content is too dense (3+ bullets AND high volume)
             should_skip_diagram = content_volume >= 5 and num_bullets >= 3
             
             if diagram and is_valid_mermaid(diagram) and not should_skip_diagram:
@@ -364,39 +361,10 @@ def render_marpit_markdown(slide_json, topic):
                     slide_lines.append("</div>")
             
             elif diagram and is_valid_mermaid(diagram) and should_skip_diagram:
-                # Slide is too full - render diagram as compact text format instead
-                slide_lines.append("")
-                slide_lines.append("**Flow Map:**")
-                slide_lines.append("")
-                alias_map = _extract_mermaid_aliases(diagram)
-                
-                # Parse Mermaid diagram to extract relationships
-                diagram_lines = diagram.strip().split('\n')
-                processed_lines = []
-                
-                for line in diagram_lines:
-                    line = line.strip()
-                    if not line or line.startswith('graph') or line.startswith('flowchart') or line.startswith('---'):
-                        continue
-                    
-                    if '-->' in line:
-                        parts = line.split('-->')
-                        if len(parts) == 2:
-                            source = parts[0].strip()
-                            dest = parts[1].strip()
-
-                            source_text = _resolve_mermaid_node_label(source, alias_map)
-                            dest_text = _resolve_mermaid_node_label(dest, alias_map)
-
-                            if source_text and dest_text and source_text not in ('graph', 'flowchart') and dest_text not in ('graph', 'flowchart'):
-                                processed_lines.append(f"• {source_text} → {dest_text}")
-                
-                # Add only first 3 flows when space is constrained
-                if processed_lines:
-                    for pline in processed_lines[:3]:
-                        slide_lines.append(pline)
-                
-                print(f"  [diagram {idx:02d}] Skipped image (table full) - rendered as text")
+                # Slide is too full - diagram was supposed to be moved by optimizer
+                # but check remained due to late content changes
+                # Skip diagram entirely (don't render as text) to prevent overflow
+                print(f"  [diagram {idx:02d}] Skipped (content volume too high after optimization)")
 
 
             # ========== CODE BLOCK RENDERING ==========
