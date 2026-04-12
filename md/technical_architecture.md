@@ -11,6 +11,8 @@ This document explains the full technical flow of the Marp Presentation Generato
 - Data contracts and artifacts
 - Failure handling and fallback behavior
 
+For a visual representation of all Python functions and their interactions, see [Function Flow Diagram](function_flow_diagram.md).
+
 ---
 
 ## High-Level Execution Paths

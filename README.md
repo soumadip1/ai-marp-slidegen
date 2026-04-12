@@ -225,9 +225,9 @@ marp-generator/
 
 For a visual version of the runtime project layout, see:
 
-- [Project Structure Diagram](project-structure.md)
-- [Flow Diagram](flow_diagram.md)
-- [Technical Architecture](technical_architecture.md)
+- [Project Structure Diagram](md/project-structure.md)
+- [Flow Diagram](md/flow_diagram.md)
+- [Technical Architecture](md/technical_architecture.md)
 ---
 
 ## Module Reference
