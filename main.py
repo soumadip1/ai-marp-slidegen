@@ -98,7 +98,7 @@ def topic_to_ppt():
         print("Topic cannot be empty.")
         return
 
-    # Step 1: Generate slide plan from GPT-4
+    # Step 1: Generate slide plan from GPT-5.4-mini
     t0 = time.time()
     plan = generate_slide_plan(topic)
     print(f"[{time.time()-t0:.1f}s] Slide plan generated ({len(plan.get('slides', []))} slides)")
