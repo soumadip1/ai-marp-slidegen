@@ -13,6 +13,7 @@ Give it a topic and it returns a fully styled `.pptx` file — with downloaded s
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
+- [Structure Diagram](#structure-diagram)
 - [Module Reference](#module-reference)
 - [Building a Distributable Package](#building-a-distributable-package)
 
@@ -217,6 +218,15 @@ marp-generator/
 ├── PPT/                      # Generated .md and .pptx files (auto-created)
 └── assets/                   # Downloaded images (auto-created)
 ```
+
+---
+
+## Structure Diagram
+
+For a visual version of the runtime project layout, see:
+
+- [Project Structure Diagram](project-structure.md)
+- [Raw Mermaid Source](project-structure.mmd)
 
 ---
 
