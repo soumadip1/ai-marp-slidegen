@@ -28,6 +28,7 @@ Give it a topic and it returns a fully styled `.pptx` file — with downloaded s
 5. A Marp-flavoured Markdown file is assembled and saved.
 6. Marp CLI converts the Markdown to a fully styled `.pptx` file.
 
+   [Detailed "How It Works" Guide](md/HOW_IT_WORKS.md)
 ---
 
 ## Prerequisites
@@ -226,7 +227,7 @@ marp-generator/
 For a visual version of the runtime project layout, see:
 
 - [Project Structure Diagram](project-structure.md)
-
+- [Flow Diagram](flow_diagram.md)
 ---
 
 ## Module Reference
