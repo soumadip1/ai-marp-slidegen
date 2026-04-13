@@ -5,7 +5,7 @@ Create a structured JSON slide plan for the topic below.
 Topic: {topic}
 
 Rules:
-- Generate {num_slides} slides total.
+- Generate exactly {num_slides} slides total. Do not generate more or fewer slides.
 - The first slide must be a title slide with type `title`.
 - Slide types can be: title, content, diagram, code, chart.
 - Each slide can include: title, subtitle, icon, bullets, diagram, code, chart, speaker_notes, image_query.

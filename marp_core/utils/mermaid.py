@@ -8,7 +8,95 @@ import subprocess
 import tempfile
 import os
 import time
+import shutil
 from pathlib import Path
+
+
+def _resolve_mmdc_binary():
+    """
+    Resolve the Mermaid CLI executable path in a portable way.
+
+    Resolution order:
+    1. PATH lookup (`mmdc`, including Windows executable variants)
+    2. npm global prefix lookup (`npm prefix -g`)
+    3. Common npm global bin locations for the current user/profile
+    """
+    # 1) PATH-based resolution (works when npm global bin is in PATH)
+    # Keep Windows to executable wrappers only; .ps1 requires PowerShell host.
+    path_candidates = ["mmdc", "mmdc.cmd", "mmdc.exe", "mmdc.bat"]
+    for candidate in path_candidates:
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+
+    # 2) npm prefix-based resolution (works when npm is available but PATH isn't updated).
+    npm_bin_candidates = []
+    npm_exe = shutil.which("npm")
+    if npm_exe:
+        try:
+            npm_prefix = subprocess.run(
+                [npm_exe, "prefix", "-g"],
+                capture_output=True,
+                text=True,
+                timeout=8,
+                check=False,
+            ).stdout.strip()
+            if npm_prefix:
+                prefix_path = Path(npm_prefix)
+                if os.name == "nt":
+                    npm_bin_candidates.extend(
+                        [
+                            prefix_path / "mmdc.cmd",
+                            prefix_path / "mmdc.bat",
+                        ]
+                    )
+                else:
+                    npm_bin_candidates.append(prefix_path / "bin" / "mmdc")
+        except Exception:
+            # Ignore npm probing failures and continue with filesystem fallbacks.
+            pass
+
+    for candidate in npm_bin_candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    # 3) Known npm global bin locations (derived dynamically, no hardcoded usernames)
+    disk_candidates = []
+
+    if os.name == "nt":
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            disk_candidates.extend(
+                [
+                    Path(appdata) / "npm" / "mmdc.cmd",
+                    Path(appdata) / "npm" / "mmdc.bat",
+                ]
+            )
+
+        userprofile = os.environ.get("USERPROFILE")
+        if userprofile:
+            disk_candidates.extend(
+                [
+                    Path(userprofile) / "AppData" / "Roaming" / "npm" / "mmdc.cmd",
+                    Path(userprofile) / "AppData" / "Roaming" / "npm" / "mmdc.bat",
+                ]
+            )
+    else:
+        home = Path.home()
+        disk_candidates.extend(
+            [
+                home / ".npm-global" / "bin" / "mmdc",
+                home / ".local" / "bin" / "mmdc",
+                Path("/usr/local/bin/mmdc"),
+                Path("/opt/homebrew/bin/mmdc"),
+            ]
+        )
+
+    for candidate in disk_candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    return None
 
 
 def convert_mermaid_to_png(mermaid_code, output_path, timeout=30):
@@ -99,29 +187,18 @@ def convert_mermaid_to_png(mermaid_code, output_path, timeout=30):
         # Ensure output directory exists
         Path(output_path_str).parent.mkdir(parents=True, exist_ok=True)
         
-        # Try multiple ways to find and call mmdc
-        mmdc_paths = [
-            # Windows npm global install path
-            r"C:\Users\souma\AppData\Roaming\npm\mmdc.cmd",
-            # Fallback to direct command (if in PATH)
-            "mmdc"
-        ]
-        
-        cmd_list = None
-        for mmdc_path in mmdc_paths:
-            # Check if this path exists or try it anyway (for PATH resolution)
-            if Path(mmdc_path).exists() or mmdc_path == "mmdc":
-                cmd_list = [
-                    mmdc_path, 
-                    '-i', temp_mmd_path, 
-                    '-o', output_path_str,
-                    '--scale', '1'  # 1x scale to reduce output size on slides
-                ]
-                break
-        
-        if cmd_list is None:
+        mmdc_bin = _resolve_mmdc_binary()
+        if not mmdc_bin:
             print("WARNING: mmdc (mermaid-cli) not found. Install with: npm install -g @mermaid-js/mermaid-cli")
+            print("  Also ensure your npm global bin directory is in PATH.")
             return None
+
+        cmd_list = [
+            mmdc_bin,
+            '-i', temp_mmd_path,
+            '-o', output_path_str,
+            '--scale', '1'  # 1x scale to reduce output size on slides
+        ]
         
         # Run mmdc subprocess WITHOUT shell=True to avoid Windows path issues
         # Use shell=False with proper list of arguments
