@@ -98,9 +98,23 @@ def topic_to_ppt():
         print("Topic cannot be empty.")
         return
 
+    # Get number of slides from user
+    num_slides_input = input("Enter number of slides (default 16): ").strip()
+    if num_slides_input:
+        try:
+            num_slides = int(num_slides_input)
+            if num_slides < 1:
+                print("Number of slides must be at least 1. Using default 16.")
+                num_slides = 16
+        except ValueError:
+            print("Invalid number. Using default 16.")
+            num_slides = 16
+    else:
+        num_slides = 16
+
     # Step 1: Generate slide plan from GPT-5.4-mini
     t0 = time.time()
-    plan = generate_slide_plan(topic)
+    plan = generate_slide_plan(topic, num_slides)
     print(f"[{time.time()-t0:.1f}s] Slide plan generated ({len(plan.get('slides', []))} slides)")
 
     # Debug: show diagrams if any for troubleshooting diagram parsing

@@ -13,12 +13,13 @@ from .diagram_optimizer import optimize_diagram_placement
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-def generate_slide_plan(topic):
+def generate_slide_plan(topic, num_slides=16):
     """
     Generate a complete slide plan for a presentation topic using GPT-5.4-mini.
     
     Args:
         topic (str): The presentation topic
+        num_slides (int): The number of slides to generate (default 16)
     
     Returns:
         dict: Slide plan with structure: {title, slides: [{type, title, subtitle, icon, 
@@ -26,7 +27,7 @@ def generate_slide_plan(topic):
     
     Description:
         Loads the prompt template from the bundled marp_core/templates/prompt.md file.
-        Sends it to GPT-5.4-mini with the topic substituted.
+        Sends it to GPT-5.4-mini with the topic and num_slides substituted.
         Parses JSON response and ensures first slide is a title slide.
         Returns structured slide plan ready for rendering.
     """
@@ -37,14 +38,14 @@ def generate_slide_plan(topic):
         print("ERROR: bundled prompt.md not found inside the marp_core package.")
         exit(1)
     
-    # Substitute {topic} placeholder in the prompt using replace (safer than format())
+    # Substitute {topic} and {num_slides} placeholders in the prompt using replace (safer than format())
     # format() would fail because JSON schema contains {} braces
-    prompt = prompt_template.replace("{topic}", topic)
+    prompt = prompt_template.replace("{topic}", topic).replace("{num_slides}", str(num_slides))
 
-    # Call GPT-5.4-mini with prompt to generate slide plan
+    # Call GPT-4o-mini with prompt to generate slide plan
     # Temperature 0.2 keeps outputs consistent while still being creative
     response = client.chat.completions.create(
-        model="gpt-5.4-mini",
+        model="gpt-4o-mini",
         temperature=0.2,
         messages=[{"role": "user", "content": prompt}]
     )
