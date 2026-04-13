@@ -114,7 +114,12 @@ def topic_to_ppt():
 
     # Step 1: Generate slide plan from GPT-5.4-mini
     t0 = time.time()
-    plan = generate_slide_plan(topic, num_slides)
+    try:
+        plan = generate_slide_plan(topic, num_slides)
+    except Exception as err:
+        print(f"Slide plan generation failed: {err}")
+        print("Please check your OPENAI_API_KEY and try again.")
+        return
     print(f"[{time.time()-t0:.1f}s] Slide plan generated ({len(plan.get('slides', []))} slides)")
 
     # Debug: show diagrams if any for troubleshooting diagram parsing

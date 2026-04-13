@@ -45,3 +45,36 @@ def camelcase_to_spaces(text):
     # Insert space before uppercase letters that follow lowercase letters
     result = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
     return result
+
+
+def remove_html_tags(text):
+    """
+    Remove HTML tags and entities from text.
+    
+    Args:
+        text (str): Text potentially containing HTML tags
+    
+    Returns:
+        str: Text with HTML tags removed and entities converted to newlines
+    
+    Description:
+        Strips HTML markup like <br/>, <br>, <div>, etc., and converts common
+        HTML entities to plain text equivalents. Used to clean Mermaid diagram
+        text that may have been HTML-formatted by the LLM.
+    """
+    if not text:
+        return ""
+    
+    # Replace <br/>, <br>, <BR/> with newlines
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    # Remove all other HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    # Decode common HTML entities
+    text = text.replace('&amp;', '&')
+    text = text.replace('&lt;', '<')
+    text = text.replace('&gt;', '>')
+    text = text.replace('&quot;', '"')
+    text = text.replace('&#39;', "'")
+    text = text.replace('&nbsp;', ' ')
+    
+    return text
