@@ -14,7 +14,8 @@ flowchart TB
         M2["🖼️ PNG Converter<br>Saves to <i>assets/&lt;topic&gt;/diagrams/</i>"]
         Fallback["📝 Text Fallback<br>Mermaid → text Flow Map"]
   end
-    Start(["👤 User Topic"]) --> API["⚙️ <b>Initialization</b><br>Check API Keys (Unsplash/Pexels)<br>Load bundled <i>marp_core/templates/prompt.md</i>"]
+    Start(["👤 User Topic"]) --> NumSlides["👤 <b>Number of Slides</b><br>(default: 16)"]
+    NumSlides --> API["⚙️ <b>Initialization</b><br>Check API Keys (Unsplash/Pexels)<br>Load bundled <i>marp_core/templates/prompt.md</i>"]
     API --> GPT["🤖 <b>AI Planning (GPT-5.4-mini)</b><br>Generates JSON: Slides, Bullets,<br>Mermaid Code &amp; Image Queries"]
     GPT --> Parse
     Parse --> T1
@@ -38,6 +39,7 @@ flowchart TB
      M2:::engine
      Fallback:::engine
      Start:::user
+     NumSlides:::user
      API:::tech
      GPT:::tech
      MD:::engine
