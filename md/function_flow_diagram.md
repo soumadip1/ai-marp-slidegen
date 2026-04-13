@@ -9,7 +9,8 @@ flowchart TB
     %% Topic to PPTX Path
     Choice -->|"Topic to PPTX"| ShowAPI["show_api_status()<br/>Check API availability"]
     ShowAPI --> TopicPrompt["topic_to_ppt()<br/>Prompt for topic"]
-    TopicPrompt --> GenPlan["generate_slide_plan(topic)<br/>Load prompt.md template<br/>Call OpenAI GPT-5.4-mini"]
+    TopicPrompt --> NumSlidesPrompt["Prompt for number of slides<br/>(default: 16)"]
+    NumSlidesPrompt --> GenPlan["generate_slide_plan(topic, num_slides)<br/>Load prompt.md template<br/>Call OpenAI GPT-5.4-mini"]
     GenPlan --> ParseJSON["Parse JSON response<br/>Ensure title slide"]
     ParseJSON --> OptimizeDiagrams["optimize_diagram_placement(plan)<br/>Defer overcrowded diagrams<br/>to later slides"]
     
@@ -63,6 +64,7 @@ flowchart TB
     Choice:::decision
     ShowAPI:::tech
     TopicPrompt:::user
+    NumSlidesPrompt:::user
     GenPlan:::tech
     ParseJSON:::engine
     OptimizeDiagrams:::engine

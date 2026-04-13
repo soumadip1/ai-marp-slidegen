@@ -28,11 +28,21 @@ When you run the tool, it first asks you to choose between two workflows:
 
 If you chose mode 1, the tool asks you to type a topic in plain English — for example, *"What is CSS"* or *"How AI is Changing Our Lives."* No technical knowledge is needed.
 
+---
+
+## Step 2 — You Specify the Number of Slides *(Topic to PPT only)*
+
+After providing the topic, the tool asks how many slides you want in your presentation. You can enter any number greater than 0, or press Enter to use the default of **16 slides**. This gives you control over presentation length—whether you want a quick 5-slide overview or a comprehensive 30-slide deep dive.
+
+---
+
+## Step 3 — API Status Check
+
 Before doing anything else, the tool reports which image APIs are configured (Unsplash, Pexels, or neither), so you know upfront what image sources will be used or whether it will fall back to a placeholder.
 
 ---
 
-## Step 2 — The Tool Plans the Slides with AI
+## Step 4 — The Tool Plans the Slides with AI
 
 Behind the scenes, the tool:
 
@@ -46,7 +56,7 @@ Behind the scenes, the tool:
 
 <!-- _style: "section { font-size: 16px; }" -->
 
-## Step 2 (cont.) — What Each Slide Contains
+## Step 4 (cont.) — What Each Slide Contains
 
 The AI returns a **JSON slide plan** — a list of slides, each with:
 
@@ -63,7 +73,7 @@ The AI returns a **JSON slide plan** — a list of slides, each with:
 
 ---
 
-## Step 3 — It Searches for and Downloads Images in Parallel
+## Step 5 — It Searches for and Downloads Images in Parallel
 
 For each slide, the tool generates a targeted image search query and tries to download a relevant landscape photo using a **priority fallback chain**:
 
@@ -79,7 +89,7 @@ Unsplash  →  Pexels  →  picsum.photos (free placeholder)
 
 ---
 
-## Step 4 — It Renders Mermaid Diagrams
+## Step 6 — It Renders Mermaid Diagrams
 
 If any slide includes a Mermaid diagram (e.g., a flowchart or sequence diagram), the tool:
 
@@ -94,7 +104,7 @@ If any slide includes a Mermaid diagram (e.g., a flowchart or sequence diagram),
 
 <!-- _style: "section { font-size: 16px; }" -->
 
-## Step 5 — It Assembles Everything into Marp Markdown
+## Step 7 — It Assembles Everything into Marp Markdown
 
 The tool combines all content into a single **Marp-formatted Markdown file**:
 
@@ -111,7 +121,7 @@ The finished Markdown file is saved to disk, named after your topic.
 
 ---
 
-## Step 6 — It Converts the Markdown to PowerPoint
+## Step 8 — It Converts the Markdown to PowerPoint
 
 The tool invokes the **Marp CLI** as a subprocess, passing the saved `.md` file with the `--pptx` flag:
 
@@ -123,7 +133,7 @@ The tool invokes the **Marp CLI** as a subprocess, passing the saved `.md` file 
 
 <!-- _style: "section { font-size: 16px; }" -->
 
-## Step 7 — You Get the Finished Presentation
+## Step 9 — You Get the Finished Presentation
 
 The tool prints the path to the generated `.pptx` file along with timing information for each stage:
 

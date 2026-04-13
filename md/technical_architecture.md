@@ -62,8 +62,10 @@ sequenceDiagram
         CLI->>CLI: show_api_status()
         CLI->>User: prompt topic
         User-->>CLI: topic string
+        CLI->>User: prompt number of slides (default: 16)
+        User-->>CLI: num_slides
 
-        CLI->>GEN: generate_slide_plan(topic)
+        CLI->>GEN: generate_slide_plan(topic, num_slides)
         GEN->>GEN: load templates/prompt.md
         GEN->>OAI: chat.completions.create(...)
         OAI-->>GEN: JSON slide plan
@@ -171,7 +173,8 @@ The OpenAI generator returns a JSON object with this expected shape:
 
 ### `topic_to_ppt()`
 - Prompts for topic; rejects empty input.
-- Calls `generate_slide_plan(topic)`.
+- Prompts for number of slides (with default value of 16); validates positive integer.
+- Calls `generate_slide_plan(topic, num_slides)`.
 - Prints raw diagram content for debugging if present.
 - Calls `render_marpit_markdown(plan, topic)`.
 - Persists markdown with `save_markdown(...)`.
@@ -203,9 +206,9 @@ The OpenAI generator returns a JSON object with this expected shape:
 
 ## 3) `marp_core/slide/generator.py` (AI Planning)
 
-### `generate_slide_plan(topic)`
+### `generate_slide_plan(topic, num_slides)`
 - Reads bundled `marp_core/templates/prompt.md`.
-- Substitutes `{topic}` safely with `replace(...)`.
+- Substitutes `{topic}` and `{num_slides}` safely with `replace(...)`.
 - Calls OpenAI chat completions with:
   - model: `gpt-5.4-mini`
   - temperature: `0.2`
