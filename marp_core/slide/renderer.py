@@ -114,6 +114,38 @@ def _build_closing_slide():
     ])
 
 
+def _has_chart_payload(chart):
+    """
+    Return True when chart data is complete enough to render a table block.
+    """
+    return bool(chart.get("type") and chart.get("labels") and chart.get("values"))
+
+
+def _build_chart_lines(chart):
+    """
+    Build chart markdown lines (heading, optional description, and table).
+    """
+    chart_lines = []
+
+    chart_type = sanitize_text(chart.get("type")).capitalize()
+    chart_lines.append(f"### {chart_type}")
+
+    chart_description = sanitize_text(chart.get("description", ""))
+    if chart_description:
+        chart_lines.append(f"*{chart_description}*")
+
+    chart_lines.append("")
+
+    labels = chart.get("labels", [])
+    values = chart.get("values", [])
+    if len(labels) == len(values):
+        chart_lines.append("| " + " | ".join(labels) + " |")
+        chart_lines.append("|" + " --- |" * len(labels))
+        chart_lines.append("| " + " | ".join(str(v) for v in values) + " |")
+
+    return chart_lines
+
+
 def render_marpit_markdown(slide_json, topic):
     """
     Convert slide plan JSON to Marp-formatted markdown with embedded images and content.
@@ -394,30 +426,21 @@ def render_marpit_markdown(slide_json, topic):
                 slide_lines.append("```")
 
             # ========== CHART/TABLE RENDERING ==========
-            if chart.get("type") and chart.get("labels") and chart.get("values"):
-                slide_lines.append("")
-                # Chart type header (capitalized)
-                chart_type = sanitize_text(chart.get('type')).capitalize()
-                slide_lines.append(f"### {chart_type}")
-                
-                # Add description/units for data clarity
-                # Example: "Visitor Count (thousands)" or "Revenue (millions USD)"
-                chart_description = sanitize_text(chart.get('description', ''))
-                if chart_description:
-                    slide_lines.append(f"*{chart_description}*")
-                
-                slide_lines.append("")
-                
-                # Create markdown table with labels as headers and values as data row
-                labels = chart.get("labels", [])
-                values = chart.get("values", [])
-                if len(labels) == len(values):
-                    # Header row: | Label1 | Label2 | ...
-                    slide_lines.append("| " + " | ".join(labels) + " |")
-                    # Separator row: | --- | --- | ...
-                    slide_lines.append("|" + " --- |" * len(labels))
-                    # Data row: | Value1 | Value2 | ...
-                    slide_lines.append("| " + " | ".join(str(v) for v in values) + " |")
+            deferred_chart = False
+            if _has_chart_payload(chart):
+                # Overflow guard:
+                # Move chart/table to a continuation slide when the current slide
+                # is already busy (especially with diagrams).
+                deferred_chart = bool(
+                    has_diagram_content
+                    or num_bullets >= 3
+                    or (num_bullets >= 2 and has_code)
+                    or (num_bullets >= 2 and subtitle)
+                )
+
+                if not deferred_chart:
+                    slide_lines.append("")
+                    slide_lines.extend(_build_chart_lines(chart))
 
         # ========== SPEAKER NOTES ==========
         # Add speaker notes as HTML comments (appears in presenter view during presentation)
@@ -426,6 +449,14 @@ def render_marpit_markdown(slide_json, topic):
 
         # Join slide lines and append to presentation
         slides.append("\n".join(slide_lines))
+
+        # If chart content was deferred due to density, add a continuation slide.
+        if slide_type != "title" and deferred_chart:
+            continuation_lines = ["<!-- _class: content-full -->", ""]
+            continuation_lines.append(f"#### {icon} {title} (continued)".strip())
+            continuation_lines.append("")
+            continuation_lines.extend(_build_chart_lines(chart))
+            slides.append("\n".join(continuation_lines))
 
     # Add a fixed closing slide to generated topic-based presentations.
     closing_slide = ["<!-- _class: closing-slide -->"]
