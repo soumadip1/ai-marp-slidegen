@@ -177,19 +177,71 @@ def _short_label(text: str, fallback: str, max_len: int = 120) -> str:
     return _wrap_mermaid_label(cleaned)
 
 
+def _extract_generic_comparison_entities(text: str) -> list[str]:
+    """
+    Extract generic comparison entities from text like 'Python vs Rust'.
+    """
+    cleaned = sanitize_text(text)
+    if not cleaned:
+        return []
+
+    normalized = re.sub(r"\b(vs\.?|versus|compared to)\b", "|", cleaned, flags=re.IGNORECASE)
+    if "|" not in normalized:
+        return []
+
+    entities = []
+    seen = set()
+    for raw_part in normalized.split("|"):
+        part = raw_part.strip(" ,.;:()[]{}")
+        if not part:
+            continue
+
+        # Keep the most specific tail segment from titles like
+        # 'Overview of Python' or 'Top languages: Python'.
+        if ":" in part:
+            part = part.split(":")[-1].strip()
+        if " - " in part:
+            part = part.split(" - ")[-1].strip()
+
+        part = re.sub(
+            r"^(overview of|introduction to|guide to|about|the|a|an)\s+",
+            "",
+            part,
+            flags=re.IGNORECASE,
+        )
+        part = re.sub(
+            r"\s+(comparison|overview|workflow|flow|architecture|benefits|strengths|features)$",
+            "",
+            part,
+            flags=re.IGNORECASE,
+        ).strip(" ,.;:()[]{}")
+
+        words = part.split()
+        if not words:
+            continue
+        if len(words) > 4:
+            part = " ".join(words[-4:])
+
+        key = part.lower()
+        if key not in seen:
+            seen.add(key)
+            entities.append(part)
+
+    return entities[:4]
+
+
 def _is_comparison_slide(topic: str, slide: dict[str, Any]) -> bool:
     """
     Return True when the slide is primarily a comparison, not a process flow.
     """
     bullets = slide.get("bullets") or []
-    text_chunks = [
-        topic,
+    slide_text_chunks = [
         str(slide.get("title", "")),
         str(slide.get("subtitle", "")),
         str(slide.get("speaker_notes", "")),
         " ".join(str(b) for b in bullets),
     ]
-    pool = " ".join(text_chunks).lower()
+    pool = " ".join(slide_text_chunks).lower()
 
     comparison_keywords = (
         " vs ",
@@ -202,7 +254,15 @@ def _is_comparison_slide(topic: str, slide: dict[str, Any]) -> bool:
         "pros & cons",
         "which should you choose",
     )
-    return any(keyword in pool for keyword in comparison_keywords)
+    if any(keyword in pool for keyword in comparison_keywords):
+        return True
+
+    slide_entities = _extract_generic_comparison_entities(" ".join(slide_text_chunks))
+    if len(slide_entities) >= 2:
+        return True
+
+    slide_providers = _extract_comparison_providers("", slide)
+    return len(slide_providers) >= 2
 
 
 def _extract_comparison_providers(topic: str, slide: dict[str, Any]) -> list[str]:
@@ -232,10 +292,32 @@ def _extract_comparison_providers(topic: str, slide: dict[str, Any]) -> list[str
 
     providers = []
     seen = set()
-    for label, patterns in provider_patterns:
-        if any(pattern in pool_lower for pattern in patterns) and label not in seen:
-            seen.add(label)
+
+    def _append_provider(label: str) -> None:
+        key = label.lower()
+        if key not in seen:
+            seen.add(key)
             providers.append(label)
+
+    # First, detect generic "X vs Y" style entities so comparison decks like
+    # "Python vs Rust" don't degrade into "Option A / Option B".
+    topic_entities = _extract_generic_comparison_entities(topic)
+    if len(topic_entities) >= 2:
+        for entity in topic_entities:
+            _append_provider(entity)
+    else:
+        generic_sources = [
+            str(slide.get("title", "")),
+            str(slide.get("subtitle", "")),
+            topic,
+        ]
+        for source in generic_sources:
+            for entity in _extract_generic_comparison_entities(source):
+                _append_provider(entity)
+
+    for label, patterns in provider_patterns:
+        if any(pattern in pool_lower for pattern in patterns):
+            _append_provider(label)
 
     # Collapse long/short duplicates while preserving familiar short labels on slides.
     normalized = []
@@ -346,8 +428,25 @@ def _build_fallback_mermaid(topic: str, slide: dict[str, Any]) -> str | None:
     if _is_comparison_slide(topic, slide):
         return _build_comparison_fallback_mermaid(topic, slide)
 
+    overview_keywords = (
+        "overview",
+        "introduction",
+        "summary",
+        "key features",
+        "strengths",
+        "benefits",
+        "use cases",
+    )
+
     # 1) Prefer slide-specific bullet content when available.
     if len(bullet_steps) >= 3:
+        if any(keyword in context for keyword in overview_keywords):
+            root_label = _short_label(title or topic, _short_label(topic, "Topic"), max_len=48)
+            lines = ["flowchart TD", f'  ROOT["{root_label.replace("\"", "\\\"")}"]']
+            for idx, bullet in enumerate(bullet_steps[:5], start=1):
+                escaped_label = bullet.replace('"', '\\"')
+                lines.append(f'  ROOT --> B{idx}["{escaped_label}"]')
+            return "\n".join(lines)
         steps = bullet_steps[:5]
     # 2) Use architecture-specific flow for architecture slides.
     elif "architecture" in context:

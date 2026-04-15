@@ -242,7 +242,7 @@ def render_marpit_markdown(slide_json, topic):
     # Add comprehensive CSS styling for all slide elements
     # Includes color scheme, typography, image positioning, code formatting
     # Optimized for 40% right-side images with adequate left content spacing
-    slides.append("<style>\nsection { color: #1a1a1a; font-size: 28px; padding: 1.5rem 1.5rem 1.5rem 1.5rem; }\nh1 { font-size: 2.2em; line-height: 1.1; color: #0f4c81; word-break: break-word; margin-bottom: 0.3em; }\nh2 { font-size: 1.4em; line-height: 1.2; color: #125c9b; margin-bottom: 0.3em; }\nh4 { font-size: 1.3em; line-height: 1.2; color: #0f4c81; margin-bottom: 0.4em; }\nul { font-size: 1em; line-height: 1.6; padding-left: 1.2rem; margin-top: 0.5rem; }\nli { margin-bottom: 0.4rem; }\np { font-size: 1em; }\ntable { font-size: 0.75em; width: 55%; }\ntd { padding: 0.3em 0.5em; }\nth { padding: 0.4em 0.5em; }\nimg { max-width: 100%; height: auto; }\nimg[alt*=\"Diagram\"] { max-height: 56vh; max-width: 80%; width: auto; height: auto; object-fit: contain; margin: 1.2em auto; display: block; }\ndiv[style*=\"text-align: center\"] { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }\ndiv[style*=\"text-align: center\"] img { display: block; margin: 0 auto; }\nsection.title-page { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; color: white; padding: 2.5rem 3.5rem; }\nsection.title-page h1 { color: white; font-size: 2.4em; line-height: 1.15; margin-bottom: 0.5em; }\nsection.title-page h2 { color: #c8ddf0; font-size: 1.4em; font-weight: 400; }\nsection.content-full { display: flex; flex-direction: column; justify-content: center; padding: 2rem 3.5rem; }\nsection.content-full h4 { font-size: 1.5em; margin-bottom: 0.6em; }\nsection.content-full ul { font-size: 1.1em; line-height: 1.7; }\nsection.content-full li { margin-bottom: 0.5rem; }\nsection.closing-slide { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 3.5rem; }\nsection.closing-slide h1 { text-align: center; width: 100%; font-size: 2.5em; font-weight: 700; }\npre { background-color: #f5f5f5; padding: 1rem; border-radius: 4px; font-size: 0.85em; width: 55%; color: #1a1a1a; }\ncode { font-family: 'Courier New', monospace; color: #1a1a1a; }\nblockquote { border-left: 4px solid #0f4c81; padding-left: 1rem; color: #1a1a1a; }\n</style>\n")
+    slides.append("<style>\nsection { color: #1a1a1a; font-size: 28px; padding: 1.5rem 1.5rem 1.5rem 1.5rem; }\nh1 { font-size: 2.2em; line-height: 1.1; color: #0f4c81; word-break: break-word; margin-bottom: 0.3em; }\nh2 { font-size: 1.4em; line-height: 1.2; color: #125c9b; margin-bottom: 0.3em; }\nh4 { font-size: 1.3em; line-height: 1.2; color: #0f4c81; margin-bottom: 0.4em; }\nul { font-size: 1em; line-height: 1.6; padding-left: 1.2rem; margin-top: 0.5rem; }\nli { margin-bottom: 0.4rem; }\np { font-size: 1em; }\ntable { font-size: 0.75em; width: 55%; }\ntd { padding: 0.3em 0.5em; }\nth { padding: 0.4em 0.5em; }\nimg { max-width: 100%; height: auto; }\nimg[alt*=\"Diagram\"] { max-height: 60vh; max-width: 96%; width: auto; height: auto; object-fit: contain; margin: 0.9em auto 0 auto; display: block; }\ndiv[style*=\"text-align: center\"] { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }\ndiv[style*=\"text-align: center\"] img { display: block; margin: 0 auto; }\nsection.title-page { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; color: white; padding: 2.5rem 3.5rem; }\nsection.title-page h1 { color: white; font-size: 2.4em; line-height: 1.15; margin-bottom: 0.5em; }\nsection.title-page h2 { color: #c8ddf0; font-size: 1.4em; font-weight: 400; }\nsection.content-full { display: flex; flex-direction: column; justify-content: center; padding: 2rem 3.5rem; }\nsection.content-full h4 { font-size: 1.5em; margin-bottom: 0.6em; }\nsection.content-full ul { font-size: 1.1em; line-height: 1.7; }\nsection.content-full li { margin-bottom: 0.5rem; }\nsection.closing-slide { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 3.5rem; }\nsection.closing-slide h1 { text-align: center; width: 100%; font-size: 2.5em; font-weight: 700; }\npre { background-color: #f5f5f5; padding: 1rem; border-radius: 4px; font-size: 0.85em; width: 55%; color: #1a1a1a; }\ncode { font-family: 'Courier New', monospace; color: #1a1a1a; }\nblockquote { border-left: 4px solid #0f4c81; padding-left: 1rem; color: #1a1a1a; }\n</style>\n")
 
     # ========== IMAGE DOWNLOAD ORCHESTRATION ==========
     # Pre-compute all image queries and download in parallel for better performance
@@ -396,19 +396,21 @@ def render_marpit_markdown(slide_json, topic):
                         base64_data = base64.b64encode(image_data).decode('utf-8')
                         data_uri = f"data:image/png;base64,{base64_data}"
                         
-                        # Dynamically size diagrams based on text density to avoid slide clipping.
-                        if num_bullets >= 3:
-                            diagram_width = 340
-                        elif num_bullets == 2:
-                            diagram_width = 400
-                        elif num_bullets == 1:
-                            diagram_width = 460
-                        else:
-                            diagram_width = 520
-
-                        # When there is a right-side background image, reserve more space.
+                        # Use most of the visible content pane for diagrams, especially
+                        # when a 30% right-side image leaves ~70% of the slide available.
                         if image_path:
-                            diagram_width = min(diagram_width, 460)
+                            base_diagram_width = 860
+                            min_diagram_width = 680
+                            diagram_width_penalty = min(num_bullets, 3) * 60
+                        else:
+                            base_diagram_width = 1080
+                            min_diagram_width = 820
+                            diagram_width_penalty = min(num_bullets, 3) * 80
+
+                        diagram_width = max(
+                            min_diagram_width,
+                            base_diagram_width - diagram_width_penalty,
+                        )
 
                         slide_lines.append(f'![Diagram w:{diagram_width}]({data_uri})')
                         has_visible_body = True
@@ -418,7 +420,8 @@ def render_marpit_markdown(slide_json, topic):
                         # Fallback to file path
                         topic_folder = topic.lower().replace(" ", "_")
                         relative_path = f"../assets/{topic_folder}/diagrams/diagram_slide_{idx}.png"
-                        slide_lines.append(f"![Diagram w:420]({relative_path})")
+                        fallback_diagram_width = 860 if image_path else 1080
+                        slide_lines.append(f"![Diagram w:{fallback_diagram_width}]({relative_path})")
                         has_visible_body = True
                         print(f"  [diagram {idx:02d}] Rendered as file reference (fallback)")
                 else:
