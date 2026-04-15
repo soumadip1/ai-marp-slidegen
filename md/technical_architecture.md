@@ -194,9 +194,9 @@ The OpenAI generator returns a JSON object with this expected shape:
 
 ## 2) `marp_core/config.py` (Global Configuration)
 
-- Loads `.env` variables using `python-dotenv`.
+- Loads `.env` variables using `python-dotenv` from the current working directory.
 - Exposes `OPENAI_API_KEY`, `UNSPLASH_API_KEY`, `PEXELS_API_KEY`.
-- Defines output directories (`PPT/`, `assets/`) and creates them at import time.
+- Defines output directories (`PPT/`, `assets/`) relative to the current working directory and creates them at import time.
 - Provides shared constants:
   - Mermaid starter tokens (`MERMAID_VALID_STARTERS`)
   - `STOPWORDS` for query generation
@@ -209,6 +209,7 @@ The OpenAI generator returns a JSON object with this expected shape:
 ### `generate_slide_plan(topic, num_slides)`
 - Reads bundled `marp_core/templates/prompt.md`.
 - Substitutes `{topic}` and `{num_slides}` safely with `replace(...)`.
+- Lazily creates the OpenAI client when topic generation is actually requested.
 - Calls OpenAI chat completions with:
   - model: `gpt-5.4-mini`
   - temperature: `0.2`
@@ -393,8 +394,11 @@ The OpenAI generator returns a JSON object with this expected shape:
 
 - `pyproject.toml`:
   - package name/version/dependencies
+  - build backend: `setuptools.build_meta`
   - CLI script entrypoint: `marp-gen = "main:main"`
+  - top-level module inclusion: `py-modules = ["main"]`
   - includes `templates/*.md` in package data
+- standard build artifacts are emitted into `dist/`, `build/`, and `*.egg-info/`
 - `marp_core/__init__.py` provides package metadata (`__version__`, `__author__`).
 - subpackage `__init__.py` files are descriptive package docs.
 
@@ -408,11 +412,13 @@ The OpenAI generator returns a JSON object with this expected shape:
 4. **Image provider fails** → fallback chain to next provider, then picsum.
 5. **Mermaid conversion fails** → textual flow-map fallback.
 6. **Marp CLI missing/error/timeout** → clear console diagnostics.
+7. **`OPENAI_API_KEY` missing** → `Topic to PPT` fails with a clear error, while `Markdown to PPT` can still start.
 
 ---
 
 ## Generated Artifacts and Directory Layout
 
+- All runtime artifacts are created relative to the current working directory where the CLI is launched.
 - `PPT/<topic>.md` → rendered Marp markdown
 - `PPT/<topic>.pptx` → final presentation
 - `assets/<topic>/slide_image_<n>.jpg` → downloaded slide images

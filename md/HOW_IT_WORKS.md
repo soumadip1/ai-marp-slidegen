@@ -22,6 +22,8 @@ When you run the tool, it first asks you to choose between two workflows:
 | `1` | **Topic to PPT** | Generate a brand-new presentation from scratch by entering a topic |
 | `2` | **Markdown to PPT** | Convert an existing Marp-formatted `.md` file directly into a PowerPoint file, skipping all AI generation |
 
+`OPENAI_API_KEY` is only required for mode 1. Mode 2 can still be used without OpenAI configured.
+
 ---
 
 ## Step 1 — You Provide a Topic *(Topic to PPT only)*
@@ -46,7 +48,7 @@ Before doing anything else, the tool reports which image APIs are configured (Un
 
 Behind the scenes, the tool:
 
-1. Loads a prompt template from the local file `md/prompt.md`
+1. Loads a prompt template from the bundled file `marp_core/templates/prompt.md`
 2. Substitutes your topic into the template
 3. Sends it to **GPT-5.4-mini** (OpenAI) at a low temperature (`0.2`) for consistent, structured output
 
@@ -117,7 +119,7 @@ The tool combines all content into a single **Marp-formatted Markdown file**:
 | Speaker notes | Embedded as HTML comments for presenter view |
 | Closing slide | Fixed "Thank You" slide always appended at the end |
 
-The finished Markdown file is saved to disk, named after your topic.
+The finished Markdown file is saved to disk in the current working directory's `PPT/` folder, named after your topic.
 
 ---
 
@@ -145,7 +147,7 @@ The tool prints the path to the generated `.pptx` file along with timing informa
 [22.9s] Total
 ```
 
-You can open the file in Microsoft PowerPoint immediately, present it, or edit it further.
+You can open the file in Microsoft PowerPoint immediately, present it, or edit it further. When you use the packaged CLI, both `.env` lookup and output folders are based on the directory where you launch `marp-gen`.
 
 ---
 
