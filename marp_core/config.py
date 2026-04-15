@@ -11,8 +11,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from the directory the user runs the CLI from.
+load_dotenv(dotenv_path=Path.cwd() / ".env")
 
 # ========== API KEYS ==========
 # These should be set in .env file or as environment variables
@@ -21,8 +21,9 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 UNSPLASH_API_KEY = os.getenv("UNSPLASH_API_KEY", "")
 
 # ========== OUTPUT DIRECTORIES ==========
-# Write output relative to the marp-generator project root (parent of marp_core)
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Write output relative to the current working directory so installed packages
+# behave the same as source runs.
+BASE_DIR = Path.cwd()
 PPT_DIR = BASE_DIR / "PPT"
 ASSETS_DIR = BASE_DIR / "assets"
 

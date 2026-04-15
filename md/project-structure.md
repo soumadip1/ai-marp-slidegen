@@ -1,10 +1,12 @@
 # Project Structure
 
-This diagram shows the project structure used directly or indirectly by `main.py`.
+This diagram shows the package source tree plus the runtime files created in the current working directory. For source runs, that launch directory is often the repo root. For an installed CLI, it is whichever folder you run `marp-gen` from.
 
 ```mermaid
 flowchart LR
-    ROOT["marp-generator/"] --> MAIN["main.py"] & ENV[".env"] & CORE["marp_core/"] & ASSETS["assets/"] & PPT["PPT/"]
+    WORKDIR["Current working directory"] --> ENV[".env"] & ASSETS["assets/"] & PPT["PPT/"]
+    WORKDIR --> ROOT["marp-generator/ source tree"]
+    ROOT --> MAIN["main.py"] & PYPROJECT["pyproject.toml"] & CORE["marp_core/"] & DOCS["md/"] & DIST["dist/"] & BUILD["build/"] & EGG["*.egg-info/"]
     CORE --> CORE_FILES["__init__.py<br>config.py"] & SLIDE["slide/"] & IO["io/"] & EXPORT["export/"] & IMAGE["image/"] & UTILS["utils/"] & TEMPLATES["templates/"]
     SLIDE --> SLIDE_FILES["__init__.py<br>generator.py<br>renderer.py"]
     IO --> IO_FILES["__init__.py<br>file.py"]
@@ -18,12 +20,18 @@ flowchart LR
     n1 --> DIAGRAM_FILES["diagram_slide_.png"]
 
     n1@{ shape: rect}
-     ROOT:::root
+     WORKDIR:::root
+     ROOT:::folder
      MAIN:::file
+     PYPROJECT:::file
      ENV:::file
      CORE:::folder
+     DOCS:::folder
      ASSETS:::folder
      PPT:::folder
+     DIST:::generated
+     BUILD:::generated
+     EGG:::generated
      CORE_FILES:::file
      SLIDE:::folder
      IO:::folder

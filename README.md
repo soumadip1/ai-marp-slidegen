@@ -113,24 +113,48 @@ python -m venv .venv
 source .venv/bin/activate
 
 # 3. Install Python dependencies
-pip install -r requirements.txt
-# or, if using pyproject.toml:
 pip install -e .
 ```
 
 ### Option B — Install as a Python package (pip)
 
 ```bash
-pip install -e path/to/marp-generator
+# 1. Go to the project directory
+cd C:\Users\souma\OneDrive\Code\marp-generator
+
+# 2. Create a virtual environment
+python -m venv .venv
+
+# 3. Activate it
+# Windows (cmd.exe):   
+.venv\Scripts\activate.bat
+
+# Windows (PowerShell): 
+.venv\Scripts\Activate.ps1
+
+# macOS / Linux:       
+source .venv/bin/activate
+
+# 4. Install the built wheel
+python -m pip install .\dist\marp_generator-2.0.0-py3-none-any.whl
+
+# Alternative: editable install from a local checkout
+python -m pip install -e path/to/marp-generator
 ```
 
-After installation the `marp-gen` command becomes available globally in your environment.
+After installation, the `marp-gen` command is available in the Python environment where you installed the package.
+
+To use `marp-gen` directly, activate that environment first.
+
+- Windows (PowerShell): `.venv\Scripts\Activate.ps1`
+- Windows (cmd.exe): `.venv\Scripts\activate.bat`
+- macOS / Linux: `source .venv/bin/activate`
 
 ---
 
 ## Configuration
 
-Create a `.env` file in the directory where you will run the tool (the working directory):
+Create a `.env` file in the directory where you will run the tool. The CLI reads `.env` from the current working directory, not from the installed package location:
 
 ```env
 OPENAI_API_KEY=sk-...
@@ -140,7 +164,35 @@ UNSPLASH_API_KEY=your_unsplash_key
 PEXELS_API_KEY=your_pexels_key
 ```
 
+`OPENAI_API_KEY` is required for `Topic to PPT` mode. `Markdown file to PPT` can still run without it.
+
 Output folders (`PPT/` and `assets/`) are created automatically inside your current working directory.
+
+Example:
+
+```bash
+mkdir my-decks
+cd my-decks
+
+# Put your .env here, then run:
+marp-gen
+```
+
+Typical workflow after installing into a virtual environment:
+
+```bash
+cd marp-generator
+
+# activate the environment where marp-generator was installed
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+# Windows cmd.exe:   .venv\Scripts\activate.bat
+# macOS / Linux:     source .venv/bin/activate
+
+cd ../my-decks
+marp-gen
+```
+
+At runtime, the CLI creates `PPT/`, `assets/`, and reads `.env` in the current working directory where you launch `marp-gen`. The `build/`, `dist/`, and `*.egg-info/` paths are generated packaging artifacts rather than source files.
 
 ---
 
@@ -152,9 +204,11 @@ Output folders (`PPT/` and `assets/`) are created automatically inside your curr
 # From source
 python main.py
 
-# After pip install
+# After installing into an activated environment
 marp-gen
 ```
+
+If `marp-gen` is not recognized, the package is usually installed into a different Python environment than the one your shell is using. Activate the correct environment and try again.
 
 You will be prompted to choose a mode:
 
@@ -241,7 +295,7 @@ For a visual version of the runtime project layout, see:
 | Image queries | `marp_core/image/query_generator.py` | Converts slide context to optimised search terms |
 | Image fetcher | `marp_core/image/fetcher.py` | Parallel image downloads with fallback chain |
 | Diagram renderer | `marp_core/utils/mermaid.py` | Converts Mermaid source to PNG via `mmdc` |
-| File I/O | `marp_core/io/file.py` | Persists Markdown to `PPT/` directory |
+| File I/O | `marp_core/io/file.py` | Persists Markdown to the current working directory's `PPT/` folder |
 | PPTX exporter | `marp_core/export/marp.py` | Invokes Marp CLI to produce final `.pptx` |
 
 ---
@@ -265,5 +319,15 @@ Install the wheel on any machine:
 ```bash
 pip install dist/marp_generator-2.0.0-py3-none-any.whl
 ```
+
+Then run the installed CLI from any folder that contains your `.env` file:
+
+```bash
+marp-gen
+```
+
+Generated `PPT/` and `assets/` folders will be created in whatever directory you launch the command from.
+
+Generated packaging artifacts such as `build/`, `dist/`, and `*.egg-info/` are local build outputs and should not be committed to git.
 
 > **Note:** Node.js, Marp CLI, and Mermaid CLI must still be installed separately on the target machine — they are external tools and cannot be bundled in a Python wheel.
