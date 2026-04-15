@@ -51,7 +51,7 @@ def _is_overcrowded_for_diagram(slide):
     )
 
 
-def _make_diagram_only_slide(source_slide, diagram):
+def _make_diagram_only_slide(source_slide, diagram, diagram_bullets):
     """
     Create a dedicated diagram slide when no suitable target slide exists.
     """
@@ -64,6 +64,7 @@ def _make_diagram_only_slide(source_slide, diagram):
         "image_query": sanitize_text(source_slide.get("image_query")),
         "bullets": [],
         "diagram": diagram,
+        "diagram_bullets": diagram_bullets or [],
         "code": {"language": "", "content": ""},
         "chart": {"type": "", "description": "", "labels": [], "values": []},
         "speaker_notes": f"Dedicated diagram view for: {title}",
@@ -82,7 +83,7 @@ def optimize_diagram_placement(slide_plan):
         return slide_plan
 
     # First pass: collect all diagrams that need to be deferred.
-    deferred_diagrams = {}  # Maps slide index to deferred diagram
+    deferred_diagrams = {}  # Maps slide index to deferred diagram payload
 
     for idx, slide in enumerate(slides):
         # Skip title slides - they handle diagrams differently.
@@ -94,8 +95,12 @@ def optimize_diagram_placement(slide_plan):
 
         if has_valid_diagram and _is_overcrowded_for_diagram(slide):
             m = _slide_metrics(slide)
-            deferred_diagrams[idx] = diagram
+            deferred_diagrams[idx] = {
+                "diagram": diagram,
+                "diagram_bullets": slide.get("diagram_bullets") or [],
+            }
             slides[idx]["diagram"] = ""
+            slides[idx]["diagram_bullets"] = []
             print(
                 f"  [optimizer] Slide {idx+1}: Deferring diagram "
                 f"(bullets={m['num_bullets']}, chars={m['bullet_char_count']}, volume={m['content_volume']})"
@@ -104,7 +109,9 @@ def optimize_diagram_placement(slide_plan):
     # Second pass: place deferred diagrams on the next suitable slides.
     # Process in reverse order to handle index shifts safely.
     for original_idx in sorted(deferred_diagrams.keys(), reverse=True):
-        deferred_diagram = deferred_diagrams[original_idx]
+        deferred_payload = deferred_diagrams[original_idx]
+        deferred_diagram = deferred_payload["diagram"]
+        deferred_diagram_bullets = deferred_payload["diagram_bullets"]
 
         target_idx = original_idx + 1
         placed = False
@@ -119,6 +126,7 @@ def optimize_diagram_placement(slide_plan):
 
                 if target_is_available and target_has_space:
                     slides[target_idx]["diagram"] = deferred_diagram
+                    slides[target_idx]["diagram_bullets"] = deferred_diagram_bullets
                     print(f"  [optimizer] Placed deferred diagram on slide {target_idx+1}")
                     placed = True
                     break
@@ -127,7 +135,7 @@ def optimize_diagram_placement(slide_plan):
 
         if not placed:
             source_slide = slides[original_idx] if original_idx < len(slides) else {}
-            diagram_slide = _make_diagram_only_slide(source_slide, deferred_diagram)
+            diagram_slide = _make_diagram_only_slide(source_slide, deferred_diagram, deferred_diagram_bullets)
             insert_at = min(original_idx + 1, len(slides))
             slides.insert(insert_at, diagram_slide)
             print(

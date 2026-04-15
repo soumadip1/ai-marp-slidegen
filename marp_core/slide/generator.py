@@ -12,6 +12,7 @@ from typing import Any
 from openai import OpenAI
 
 from ..config import OPENAI_API_KEY
+from ..utils.text import sanitize_text
 from ..utils.validators import is_valid_mermaid
 from .diagram_optimizer import optimize_diagram_placement
 
@@ -176,7 +177,163 @@ def _short_label(text: str, fallback: str, max_len: int = 120) -> str:
     return _wrap_mermaid_label(cleaned)
 
 
-def _build_fallback_mermaid(topic: str, slide: dict[str, Any]) -> str:
+def _is_comparison_slide(topic: str, slide: dict[str, Any]) -> bool:
+    """
+    Return True when the slide is primarily a comparison, not a process flow.
+    """
+    bullets = slide.get("bullets") or []
+    text_chunks = [
+        topic,
+        str(slide.get("title", "")),
+        str(slide.get("subtitle", "")),
+        str(slide.get("speaker_notes", "")),
+        " ".join(str(b) for b in bullets),
+    ]
+    pool = " ".join(text_chunks).lower()
+
+    comparison_keywords = (
+        " vs ",
+        " versus ",
+        "compare",
+        "comparison",
+        "compared",
+        "alternatives",
+        "pros and cons",
+        "pros & cons",
+        "which should you choose",
+    )
+    return any(keyword in pool for keyword in comparison_keywords)
+
+
+def _extract_comparison_providers(topic: str, slide: dict[str, Any]) -> list[str]:
+    """
+    Extract provider/platform names from the topic and slide text.
+    """
+    bullets = slide.get("bullets") or []
+    pool = " ".join(
+        [
+            topic,
+            str(slide.get("title", "")),
+            str(slide.get("subtitle", "")),
+            " ".join(str(b) for b in bullets),
+        ]
+    )
+    pool_lower = pool.lower()
+
+    provider_patterns = [
+        ("Amazon Web Services", ("amazon web services",)),
+        ("AWS", ("aws",)),
+        ("Microsoft Azure", ("microsoft azure",)),
+        ("Azure", ("azure",)),
+        ("Google Cloud Platform", ("google cloud platform",)),
+        ("Google Cloud", ("google cloud",)),
+        ("GCP", ("gcp",)),
+    ]
+
+    providers = []
+    seen = set()
+    for label, patterns in provider_patterns:
+        if any(pattern in pool_lower for pattern in patterns) and label not in seen:
+            seen.add(label)
+            providers.append(label)
+
+    # Collapse long/short duplicates while preserving familiar short labels on slides.
+    normalized = []
+    for provider in providers:
+        short = (
+            "AWS" if "aws" in provider.lower() else
+            "Azure" if "azure" in provider.lower() else
+            "GCP" if "google cloud" in provider.lower() or provider == "GCP" else
+            provider
+        )
+        if short not in normalized:
+            normalized.append(short)
+    return normalized
+
+
+def _extract_bullet_category_details(bullets: list[Any]) -> list[tuple[str, list[tuple[str, str]]]]:
+    """
+    Parse bullets like 'Compute: EC2 (AWS) vs VM (Azure)' into comparison details.
+    """
+    details = []
+    provider_aliases = {
+        "aws": "AWS",
+        "azure": "Azure",
+        "gcp": "GCP",
+        "google cloud platform": "GCP",
+        "google cloud": "GCP",
+        "amazon web services": "AWS",
+        "microsoft azure": "Azure",
+    }
+
+    for raw_bullet in bullets or []:
+        bullet = sanitize_text(raw_bullet)
+        if ":" not in bullet:
+            continue
+
+        category, rest = bullet.split(":", 1)
+        category_label = _short_label(category, "Category", max_len=40)
+        matches = re.findall(r'([^,;]+?)\s*\((AWS|Azure|GCP|Google Cloud Platform|Google Cloud|Amazon Web Services|Microsoft Azure)\)', rest, flags=re.IGNORECASE)
+        entries = []
+        for value, provider in matches:
+            provider_key = provider_aliases.get(provider.strip().lower())
+            value_label = _short_label(value, "Service", max_len=42)
+            if provider_key and value_label:
+                entries.append((provider_key, value_label))
+
+        if entries:
+            details.append((category_label, entries))
+
+    return details
+
+
+def _build_comparison_fallback_mermaid(topic: str, slide: dict[str, Any]) -> str:
+    """
+    Create a comparison-specific Mermaid diagram for versus/comparison topics.
+    """
+    title = str(slide.get("title", ""))
+    bullets = slide.get("bullets") or []
+    context = f"{topic} {title}".lower()
+    root_label = _short_label(title or topic, "Comparison Overview", max_len=48)
+    providers = _extract_comparison_providers(topic, slide)
+    category_details = _extract_bullet_category_details(bullets)
+
+    lines = ["flowchart TD", f'  ROOT["{root_label.replace("\"", "\\\"")}"]']
+
+    if category_details:
+        for idx, (category, entries) in enumerate(category_details[:4], start=1):
+            category_id = f"C{idx}"
+            lines.append(f'  ROOT --> {category_id}["{category.replace("\"", "\\\"")}"]')
+            for sub_idx, (provider, value) in enumerate(entries[:3], start=1):
+                node_id = f"{category_id}P{sub_idx}"
+                label = f"{provider}: {value}"
+                lines.append(f'  {category_id} --> {node_id}["{label.replace("\"", "\\\"")}"]')
+        return "\n".join(lines)
+
+    if not providers:
+        providers = ["Option A", "Option B"]
+
+    if "architecture" in context:
+        categories = ["Compute Layer", "Storage Layer", "Network Layer", "Identity Layer"]
+    elif any(keyword in context for keyword in ("service", "feature", "capability")):
+        categories = ["Compute Services", "Storage Services", "Database Services"]
+    elif "pricing" in context:
+        categories = ["Pricing Model", "Discount Options", "Cost Controls"]
+    else:
+        categories = ["Core Strengths", "Ecosystem Fit", "Operations Model"]
+
+    for idx, category in enumerate(categories[:4], start=1):
+        category_id = f"C{idx}"
+        lines.append(f'  ROOT --> {category_id}["{category}"]')
+        for provider_idx, provider in enumerate(providers[:3], start=1):
+            node_id = f"{category_id}P{provider_idx}"
+            label = f"{provider} {category}"
+            lines.append(f'  {category_id} --> {node_id}["{label}"]')
+
+    return "\n".join(lines)
+
+
+def _build_fallback_mermaid(topic: str, slide: dict[str, Any]) -> str | None:
     """
     Create a deterministic flowchart when the model omits one.
     """
@@ -184,6 +341,10 @@ def _build_fallback_mermaid(topic: str, slide: dict[str, Any]) -> str:
     bullets = slide.get("bullets") or []
     context = f"{topic} {title}".lower()
     bullet_steps = [_short_label(str(b), "Step") for b in bullets if str(b).strip()]
+
+    # Comparison slides need a comparison-specific diagram, not a fake process flow.
+    if _is_comparison_slide(topic, slide):
+        return _build_comparison_fallback_mermaid(topic, slide)
 
     # 1) Prefer slide-specific bullet content when available.
     if len(bullet_steps) >= 3:
@@ -242,12 +403,27 @@ def _ensure_flow_diagrams(plan: dict[str, Any], topic: str) -> dict[str, Any]:
         current_diagram = str(slide.get("diagram", "") or "")
         if _is_flow_slide_candidate(slide) and not is_valid_mermaid(current_diagram):
             fallback_diagram = _build_fallback_mermaid(topic, slide)
+            if not fallback_diagram:
+                print(f"  [plan] Slide {idx}: skipped fallback flowchart for comparison-style slide")
+                continue
             if fallback_diagram in seen_fallback_diagrams:
                 # Avoid repeating identical fallback flowcharts across slides.
                 continue
             slide["diagram"] = fallback_diagram
             seen_fallback_diagrams.add(fallback_diagram)
             print(f"  [plan] Slide {idx}: inserted fallback flowchart")
+    return plan
+
+
+def _normalize_slide_backup_fields(plan: dict[str, Any]) -> dict[str, Any]:
+    """
+    Ensure optional backup fields always exist in the slide plan.
+    """
+    for slide in plan.get("slides", []) or []:
+        if not isinstance(slide.get("bullets"), list):
+            slide["bullets"] = []
+        if not isinstance(slide.get("diagram_bullets"), list):
+            slide["diagram_bullets"] = []
     return plan
 
 
@@ -313,10 +489,13 @@ def generate_slide_plan(topic, num_slides=16):
             "image_query": topic,
             "bullets": [],
             "diagram": "",
+            "diagram_bullets": [],
             "code": {"language": "", "content": ""},
             "chart": {"type": "", "description": "", "labels": [], "values": []},
             "speaker_notes": "Title slide introducing the topic and setting visual tone."
         })
+
+    plan = _normalize_slide_backup_fields(plan)
 
     # Guarantee that workflow/process slides carry renderable Mermaid diagrams.
     plan = _ensure_flow_diagrams(plan, topic)

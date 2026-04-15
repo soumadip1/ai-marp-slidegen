@@ -11,8 +11,35 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from the directory the user runs the CLI from.
-load_dotenv(dotenv_path=Path.cwd() / ".env")
+SOURCE_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _resolve_runtime_base_dir() -> Path:
+    """
+    Choose the runtime base directory for config and generated output.
+
+    Priority:
+    1. Current working directory when it contains a .env file
+    2. Source tree root when running directly from the repo and it contains a .env
+    3. Current working directory as a final fallback
+    """
+    cwd = Path.cwd()
+    cwd_env = cwd / ".env"
+    source_env = SOURCE_ROOT / ".env"
+
+    if cwd_env.exists():
+        return cwd
+
+    if source_env.exists():
+        return SOURCE_ROOT
+
+    return cwd
+
+
+BASE_DIR = _resolve_runtime_base_dir()
+
+# Load environment variables from the runtime base directory.
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 # ========== API KEYS ==========
 # These should be set in .env file or as environment variables
@@ -21,9 +48,7 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 UNSPLASH_API_KEY = os.getenv("UNSPLASH_API_KEY", "")
 
 # ========== OUTPUT DIRECTORIES ==========
-# Write output relative to the current working directory so installed packages
-# behave the same as source runs.
-BASE_DIR = Path.cwd()
+# Write output relative to the resolved runtime base directory.
 PPT_DIR = BASE_DIR / "PPT"
 ASSETS_DIR = BASE_DIR / "assets"
 
