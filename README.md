@@ -146,9 +146,14 @@ After installation, the `marp-gen` command is available in the Python environmen
 
 To use `marp-gen` directly, activate that environment first.
 
-- Windows (PowerShell): `.venv\Scripts\Activate.ps1`
-- Windows (cmd.exe): `.venv\Scripts\activate.bat`
-- macOS / Linux: `source .venv/bin/activate`
+- Windows (PowerShell): 
+`.venv\Scripts\Activate.ps1`
+
+- Windows (cmd.exe): 
+`.venv\Scripts\activate.bat`
+
+- macOS / Linux: 
+`source .venv/bin/activate`
 
 ---
 
