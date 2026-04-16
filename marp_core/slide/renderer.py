@@ -18,6 +18,63 @@ from ..image.fetcher import download_stock_image
 from ..config import ASSETS_DIR
 
 
+def _build_empty_slide_fallback_bullets(topic, title, notes):
+    """
+    Create visible fallback bullets when a content slide would otherwise be blank.
+    """
+    pool = f"{topic} {title} {notes}".lower()
+
+    comparison_keywords = (
+        " vs ",
+        " versus ",
+        "compare",
+        "comparison",
+        "alternatives",
+    )
+    is_comparison = any(keyword in pool for keyword in comparison_keywords)
+    mentions_architecture = "architecture" in pool
+
+    if is_comparison and mentions_architecture:
+        return [
+            "Compare the core building blocks across providers: compute, storage, networking, and identity.",
+            "AWS emphasizes service breadth, Azure integrates deeply with Microsoft ecosystems, and GCP stands out in data and Kubernetes.",
+            "The best architecture depends on workload patterns, compliance needs, team skills, and existing platform investments.",
+        ]
+
+    if is_comparison:
+        return [
+            "Compare the providers against the most important criteria for this decision.",
+            "Focus on differences in service maturity, pricing, ecosystem fit, and operational complexity.",
+            "Choose the option that best matches workload needs, budget constraints, and team expertise.",
+        ]
+
+    if mentions_architecture:
+        return [
+            "This slide highlights the main components and relationships in the solution architecture.",
+            "Focus on how compute, storage, networking, and security fit together in the overall design.",
+            "Use this view to connect the high-level structure to the services discussed in the surrounding slides.",
+        ]
+
+    fallback_title = sanitize_text(title) or sanitize_text(topic) or "this topic"
+    return [
+        f"This slide expands on {fallback_title}.",
+        "Use the surrounding slides for the detailed comparison, examples, and decision criteria.",
+        "Treat this section as a high-level summary rather than a step-by-step workflow.",
+    ]
+
+
+def _sanitize_bullet_list(values):
+    """
+    Return a cleaned list of non-empty bullet strings.
+    """
+    cleaned = []
+    for value in values or []:
+        text = sanitize_text(value)
+        if text:
+            cleaned.append(text)
+    return cleaned
+
+
 def _extract_mermaid_aliases(diagram):
     """
     Extract readable node labels from Mermaid diagram text.
@@ -185,7 +242,7 @@ def render_marpit_markdown(slide_json, topic):
     # Add comprehensive CSS styling for all slide elements
     # Includes color scheme, typography, image positioning, code formatting
     # Optimized for 40% right-side images with adequate left content spacing
-    slides.append("<style>\nsection { color: #1a1a1a; font-size: 28px; padding: 1.5rem 1.5rem 1.5rem 1.5rem; }\nh1 { font-size: 2.2em; line-height: 1.1; color: #0f4c81; word-break: break-word; margin-bottom: 0.3em; }\nh2 { font-size: 1.4em; line-height: 1.2; color: #125c9b; margin-bottom: 0.3em; }\nh4 { font-size: 1.3em; line-height: 1.2; color: #0f4c81; margin-bottom: 0.4em; }\nul { font-size: 1em; line-height: 1.6; padding-left: 1.2rem; margin-top: 0.5rem; }\nli { margin-bottom: 0.4rem; }\np { font-size: 1em; }\ntable { font-size: 0.75em; width: 55%; }\ntd { padding: 0.3em 0.5em; }\nth { padding: 0.4em 0.5em; }\nimg { max-width: 100%; height: auto; }\nimg[alt*=\"Diagram\"] { max-height: 56vh; max-width: 80%; width: auto; height: auto; object-fit: contain; margin: 1.2em auto; display: block; }\ndiv[style*=\"text-align: center\"] { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }\ndiv[style*=\"text-align: center\"] img { display: block; margin: 0 auto; }\nsection.title-page { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; color: white; padding: 2.5rem 3.5rem; }\nsection.title-page h1 { color: white; font-size: 2.4em; line-height: 1.15; margin-bottom: 0.5em; }\nsection.title-page h2 { color: #c8ddf0; font-size: 1.4em; font-weight: 400; }\nsection.content-full { display: flex; flex-direction: column; justify-content: center; padding: 2rem 3.5rem; }\nsection.content-full h4 { font-size: 1.5em; margin-bottom: 0.6em; }\nsection.content-full ul { font-size: 1.1em; line-height: 1.7; }\nsection.content-full li { margin-bottom: 0.5rem; }\nsection.closing-slide { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 3.5rem; }\nsection.closing-slide h1 { text-align: center; width: 100%; font-size: 2.5em; font-weight: 700; }\npre { background-color: #f5f5f5; padding: 1rem; border-radius: 4px; font-size: 0.85em; width: 55%; color: #1a1a1a; }\ncode { font-family: 'Courier New', monospace; color: #1a1a1a; }\nblockquote { border-left: 4px solid #0f4c81; padding-left: 1rem; color: #1a1a1a; }\n</style>\n")
+    slides.append("<style>\nsection { color: #1a1a1a; font-size: 28px; padding: 1.5rem 1.5rem 1.5rem 1.5rem; }\nh1 { font-size: 2.2em; line-height: 1.1; color: #0f4c81; word-break: break-word; margin-bottom: 0.3em; }\nh2 { font-size: 1.4em; line-height: 1.2; color: #125c9b; margin-bottom: 0.3em; }\nh4 { font-size: 1.3em; line-height: 1.2; color: #0f4c81; margin-bottom: 0.4em; }\nul { font-size: 1em; line-height: 1.6; padding-left: 1.2rem; margin-top: 0.5rem; }\nli { margin-bottom: 0.4rem; }\np { font-size: 1em; }\ntable { font-size: 0.75em; width: 55%; }\ntd { padding: 0.3em 0.5em; }\nth { padding: 0.4em 0.5em; }\nimg { max-width: 100%; height: auto; }\nimg[alt*=\"Diagram\"] { max-height: 60vh; max-width: 96%; width: auto; height: auto; object-fit: contain; margin: 0.9em auto 0 auto; display: block; }\ndiv[style*=\"text-align: center\"] { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; }\ndiv[style*=\"text-align: center\"] img { display: block; margin: 0 auto; }\nsection.title-page { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; color: white; padding: 2.5rem 3.5rem; }\nsection.title-page h1 { color: white; font-size: 2.4em; line-height: 1.15; margin-bottom: 0.5em; }\nsection.title-page h2 { color: #c8ddf0; font-size: 1.4em; font-weight: 400; }\nsection.content-full { display: flex; flex-direction: column; justify-content: center; padding: 2rem 3.5rem; }\nsection.content-full h4 { font-size: 1.5em; margin-bottom: 0.6em; }\nsection.content-full ul { font-size: 1.1em; line-height: 1.7; }\nsection.content-full li { margin-bottom: 0.5rem; }\nsection.closing-slide { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 3.5rem; }\nsection.closing-slide h1 { text-align: center; width: 100%; font-size: 2.5em; font-weight: 700; }\npre { background-color: #f5f5f5; padding: 1rem; border-radius: 4px; font-size: 0.85em; width: 55%; color: #1a1a1a; }\ncode { font-family: 'Courier New', monospace; color: #1a1a1a; }\nblockquote { border-left: 4px solid #0f4c81; padding-left: 1rem; color: #1a1a1a; }\n</style>\n")
 
     # ========== IMAGE DOWNLOAD ORCHESTRATION ==========
     # Pre-compute all image queries and download in parallel for better performance
@@ -231,7 +288,8 @@ def render_marpit_markdown(slide_json, topic):
         title = sanitize_text(slide.get("title"))
         subtitle = sanitize_text(slide.get("subtitle"))
         icon = sanitize_text(slide.get("icon"))
-        bullets = slide.get("bullets") or []
+        bullets = _sanitize_bullet_list(slide.get("bullets"))
+        diagram_bullets = _sanitize_bullet_list(slide.get("diagram_bullets"))
         slide_type = slide.get("type", "content")
 
         # Get downloaded image path for this slide (may be None if download failed)
@@ -267,6 +325,7 @@ def render_marpit_markdown(slide_json, topic):
         else:
             # Check if this slide will have a diagram - use already-extracted diagram variable
             has_diagram = diagram and is_valid_mermaid(diagram)
+            has_visible_body = False
             
             # Add background image with appropriate sizing based on content
             if image_path:
@@ -291,10 +350,8 @@ def render_marpit_markdown(slide_json, topic):
                 slide_lines.append("")
                 # Limit to 4 bullets for readability and slide space
                 for bullet in bullets[:4]:
-                    bullet_text = sanitize_text(bullet)
-                    if bullet_text:
-                        # Standard markdown bullet format
-                        slide_lines.append(f"- {bullet_text}")
+                    slide_lines.append(f"- {bullet}")
+                    has_visible_body = True
 
             # ========== MERMAID DIAGRAM PARSING ==========
             # Note: Diagram placement is already optimized by diagram_optimizer
@@ -339,66 +396,80 @@ def render_marpit_markdown(slide_json, topic):
                         base64_data = base64.b64encode(image_data).decode('utf-8')
                         data_uri = f"data:image/png;base64,{base64_data}"
                         
-                        # Dynamically size diagrams based on text density to avoid slide clipping.
-                        if num_bullets >= 3:
-                            diagram_width = 340
-                        elif num_bullets == 2:
-                            diagram_width = 400
-                        elif num_bullets == 1:
-                            diagram_width = 460
-                        else:
-                            diagram_width = 520
-
-                        # When there is a right-side background image, reserve more space.
+                        # Use most of the visible content pane for diagrams, especially
+                        # when a 30% right-side image leaves ~70% of the slide available.
                         if image_path:
-                            diagram_width = min(diagram_width, 460)
+                            base_diagram_width = 860
+                            min_diagram_width = 680
+                            diagram_width_penalty = min(num_bullets, 3) * 60
+                        else:
+                            base_diagram_width = 1080
+                            min_diagram_width = 820
+                            diagram_width_penalty = min(num_bullets, 3) * 80
+
+                        diagram_width = max(
+                            min_diagram_width,
+                            base_diagram_width - diagram_width_penalty,
+                        )
 
                         slide_lines.append(f'![Diagram w:{diagram_width}]({data_uri})')
+                        has_visible_body = True
                         print(f"  [diagram {idx:02d}] Rendered as image (embedded base64, centered)")
                     except Exception as embed_err:
                         print(f"  [diagram {idx:02d}] Warning: Could not embed as base64: {embed_err}")
                         # Fallback to file path
                         topic_folder = topic.lower().replace(" ", "_")
                         relative_path = f"../assets/{topic_folder}/diagrams/diagram_slide_{idx}.png"
-                        slide_lines.append(f"![Diagram w:420]({relative_path})")
+                        fallback_diagram_width = 860 if image_path else 1080
+                        slide_lines.append(f"![Diagram w:{fallback_diagram_width}]({relative_path})")
+                        has_visible_body = True
                         print(f"  [diagram {idx:02d}] Rendered as file reference (fallback)")
                 else:
-                    # Fallback: render as text-based flow map with bullet points
-                    slide_lines.append("**Flow Map:**")
-                    slide_lines.append("")
-                    alias_map = _extract_mermaid_aliases(diagram)
-                    
-                    # Parse Mermaid diagram to extract relationships
-                    # Format expected: NodeId[Label] --> NodeId2[Label2]
-                    diagram_lines = diagram.strip().split('\n')
-                    processed_lines = []
-                    
-                    for line in diagram_lines:
-                        line = line.strip()
-                        # Skip lines that are not relationships (empty, comments, headers)
-                        if not line or line.startswith('graph') or line.startswith('flowchart') or line.startswith('---'):
-                            continue
-                        
-                        # Look for arrow pattern indicating a relationship/flow
-                        if '-->' in line:
-                            parts = line.split('-->')
-                            if len(parts) == 2:
-                                source = parts[0].strip()
-                                dest = parts[1].strip()
-
-                                source_text = _resolve_mermaid_node_label(source, alias_map)
-                                dest_text = _resolve_mermaid_node_label(dest, alias_map)
-
-                                if source_text and dest_text and source_text not in ('graph', 'flowchart') and dest_text not in ('graph', 'flowchart'):
-                                    processed_lines.append(f"- {source_text} -> {dest_text}")
-                    
-                    # Add processed lines to slide, limiting to 5 flows for readability
-                    if processed_lines:
-                        for pline in processed_lines[:5]:
-                            slide_lines.append(pline)
+                    # Diagram rendering failed - use prompt-provided backup text first.
+                    if diagram_bullets:
+                        slide_lines.append("")
+                        for bullet in diagram_bullets[:5]:
+                            slide_lines.append(f"- {bullet}")
+                            has_visible_body = True
                     else:
-                        # Fallback message if diagram parsing returned no flows
-                        slide_lines.append("*(Diagram content available in full presentation)*")
+                        # Final fallback: derive a text-based flow map from Mermaid edges.
+                        slide_lines.append("**Flow Map:**")
+                        slide_lines.append("")
+                        alias_map = _extract_mermaid_aliases(diagram)
+                        
+                        # Parse Mermaid diagram to extract relationships
+                        # Format expected: NodeId[Label] --> NodeId2[Label2]
+                        diagram_lines = diagram.strip().split('\n')
+                        processed_lines = []
+                        
+                        for line in diagram_lines:
+                            line = line.strip()
+                            # Skip lines that are not relationships (empty, comments, headers)
+                            if not line or line.startswith('graph') or line.startswith('flowchart') or line.startswith('---'):
+                                continue
+                            
+                            # Look for arrow pattern indicating a relationship/flow
+                            if '-->' in line:
+                                parts = line.split('-->')
+                                if len(parts) == 2:
+                                    source = parts[0].strip()
+                                    dest = parts[1].strip()
+
+                                    source_text = _resolve_mermaid_node_label(source, alias_map)
+                                    dest_text = _resolve_mermaid_node_label(dest, alias_map)
+
+                                    if source_text and dest_text and source_text not in ('graph', 'flowchart') and dest_text not in ('graph', 'flowchart'):
+                                        processed_lines.append(f"- {source_text} -> {dest_text}")
+                        
+                        # Add processed lines to slide, limiting to 5 flows for readability
+                        if processed_lines:
+                            for pline in processed_lines[:5]:
+                                slide_lines.append(pline)
+                                has_visible_body = True
+                        else:
+                            # Fallback message if diagram parsing returned no flows
+                            slide_lines.append("*(Diagram content available in full presentation)*")
+                            has_visible_body = True
                 
                 # Close the centering div if it was opened for a diagram with bg image
                 if image_path and diagram and is_valid_mermaid(diagram):
@@ -407,8 +478,13 @@ def render_marpit_markdown(slide_json, topic):
             elif diagram and is_valid_mermaid(diagram) and should_skip_diagram:
                 # Slide is too full - diagram was supposed to be moved by optimizer
                 # but check remained due to late content changes
-                # Skip diagram entirely (don't render as text) to prevent overflow
+                # Show prompt-provided backup bullets when the diagram cannot be displayed.
                 print(f"  [diagram {idx:02d}] Skipped (content volume too high after optimization)")
+                if diagram_bullets:
+                    slide_lines.append("")
+                    for bullet in diagram_bullets[:5]:
+                        slide_lines.append(f"- {bullet}")
+                        has_visible_body = True
 
 
             # ========== CODE BLOCK RENDERING ==========
@@ -441,6 +517,16 @@ def render_marpit_markdown(slide_json, topic):
                 if not deferred_chart:
                     slide_lines.append("")
                     slide_lines.extend(_build_chart_lines(chart))
+                    has_visible_body = True
+
+            # Prevent empty "diagram" or comparison slides when a fallback diagram is intentionally skipped.
+            if not has_visible_body:
+                fallback_bullets = _build_empty_slide_fallback_bullets(topic, title, notes)
+                if fallback_bullets:
+                    slide_lines.append("")
+                    for fallback_bullet in fallback_bullets:
+                        slide_lines.append(f"- {fallback_bullet}")
+                    has_visible_body = True
 
         # ========== SPEAKER NOTES ==========
         # Add speaker notes as HTML comments (appears in presenter view during presentation)

@@ -166,6 +166,10 @@ PEXELS_API_KEY=your_pexels_key
 
 `OPENAI_API_KEY` is required for `Topic to PPT` mode. `Markdown file to PPT` can still run without it.
 
+When you run the packaged CLI with `marp-gen`, `.env`, `PPT/`, and `assets/` are resolved from the folder where you launch the command.
+
+When you run the source file directly, for example `python main.py` or through a VS Code launch configuration, the app first checks the current working directory and then falls back to the repository root if that is where the project's `.env` lives.
+
 Output folders (`PPT/` and `assets/`) are created automatically inside your current working directory.
 
 Example:
