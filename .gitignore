@@ -4,6 +4,3 @@
 *.pyc
 assets/
 PPT/
-build/
-dist/
-*.egg-info/

@@ -11,7 +11,7 @@ flowchart TB
         F1["🔍 Query Gen<br>Context-aware keywords"]
         F2["🖼️ Image Fetcher<br>Unsplash → Pexels → Picsum"]
         M1["📊 Diagram Engine<br>mmdc (per-slide render loop)"]
-        M2["🖼️ PNG Converter<br>Saves to <i>./assets/&lt;topic&gt;/diagrams/</i>"]
+        M2["🖼️ PNG Converter<br>Saves to <i>assets/&lt;topic&gt;/diagrams/</i>"]
         Fallback["📝 Text Fallback<br>Mermaid → text Flow Map"]
   end
     Start(["👤 User Topic"]) --> NumSlides["👤 <b>Number of Slides</b><br>(default: 16)"]
@@ -26,7 +26,7 @@ flowchart TB
     F2 --> MD["📝 <b>Markdown Architect</b><br>Embeds PNGs &amp; Styles with<br>Custom CSS (Gaia Theme)"]
     M2 --> MD
     Fallback --> MD
-    MD --> Save["💾 <b>File I/O</b><br>Saves .md to <i>./PPT</i> in the current working directory"]
+    MD --> Save["💾 <b>File I/O</b><br>Saves .md to <i>/PPT</i> folder"]
     Save --> Marp["⚡ <b>Marp CLI Engine</b><br>Markdown → Native PPTX"]
     Marp --> Final[/"💾 <b>Final PPTX File</b><br>Editable slides with visuals"/]
     Final --> End(["✅ Ready to Present"])

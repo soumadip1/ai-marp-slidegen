@@ -15,14 +15,8 @@ from ..config import OPENAI_API_KEY
 from ..utils.validators import is_valid_mermaid
 from .diagram_optimizer import optimize_diagram_placement
 
-
-def _get_client() -> OpenAI:
-    """
-    Create an OpenAI client only when generation is requested.
-    """
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY is not set. Add it to your environment or .env file.")
-    return OpenAI(api_key=OPENAI_API_KEY)
+# Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def _safe_message_text(response: Any) -> str:
@@ -100,7 +94,6 @@ def _request_slide_plan(prompt: str) -> dict[str, Any]:
     """
     Request a slide plan from OpenAI and parse it as JSON.
     """
-    client = _get_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         temperature=0.2,
@@ -269,6 +262,9 @@ def generate_slide_plan(topic, num_slides=16):
         Parses JSON response and ensures first slide is a title slide.
         Returns structured slide plan ready for rendering.
     """
+    if not OPENAI_API_KEY:
+        raise ValueError("OPENAI_API_KEY is not set. Add it to your environment or .env file.")
+
     # Load bundled prompt template using importlib.resources (works when installed as a package)
     try:
         prompt_template = resources.files("marp_core.templates").joinpath("prompt.md").read_text(encoding="utf-8")

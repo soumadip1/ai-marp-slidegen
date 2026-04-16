@@ -10,7 +10,7 @@ flowchart TB
     Choice -->|"Topic to PPTX"| ShowAPI["show_api_status()<br/>Check API availability"]
     ShowAPI --> TopicPrompt["topic_to_ppt()<br/>Prompt for topic"]
     TopicPrompt --> NumSlidesPrompt["Prompt for number of slides<br/>(default: 16)"]
-    NumSlidesPrompt --> GenPlan["generate_slide_plan(topic, num_slides)<br/>Load bundled prompt.md template<br/>Call OpenAI GPT-5.4-mini"]
+    NumSlidesPrompt --> GenPlan["generate_slide_plan(topic, num_slides)<br/>Load prompt.md template<br/>Call OpenAI GPT-5.4-mini"]
     GenPlan --> ParseJSON["Parse JSON response<br/>Ensure title slide"]
     ParseJSON --> OptimizeDiagrams["optimize_diagram_placement(plan)<br/>Defer overcrowded diagrams<br/>to later slides"]
     
@@ -42,7 +42,7 @@ flowchart TB
     PerSlideEnd --> CloseSlide["_build_closing_slide()<br/>Append THANK YOU slide"]
     CloseSlide --> SanitizeText["sanitize_text()<br/>camelcase_to_spaces()<br/>Normalize content"]
     SanitizeText --> MarkdownReady["Join slides with ---<br/>Final markdown ready"]
-    MarkdownReady --> SaveMD["save_markdown(topic)<br/>Write to ./PPT/&lt;topic&gt;.md<br/>UTF-8 encoding"]
+    MarkdownReady --> SaveMD["save_markdown(topic)<br/>Write to PPT/&lt;topic&gt;.md<br/>UTF-8 encoding"]
     
     %% PPTX Export (Path 1 & 2)
     SaveMD --> ExportPPTX["export_slides(md_path)<br/>Build Marp CLI args<br/>Execute subprocess"]
@@ -126,16 +126,16 @@ flowchart TB
 | `is_valid_mermaid(content)` | marp_core/utils/validators.py | Validate Mermaid diagram syntax |
 | `sanitize_text(value)` | marp_core/utils/text.py | Normalize text input |
 | `camelcase_to_spaces(text)` | marp_core/utils/text.py | Convert CamelCase to readable text |
-| `save_markdown(topic, markdown)` | marp_core/io/file.py | Write markdown to `./PPT/<topic>.md` in the current working directory |
+| `save_markdown(topic, markdown)` | marp_core/io/file.py | Write markdown to PPT/<topic>.md |
 | `export_slides(md_path)` | marp_core/export/marp.py | Execute Marp CLI, produce PPTX |
 
 ## Key Data Flow Points
 
 1. **JSON Slide Plan Contract** → `generate_slide_plan()` returns structured JSON with slide metadata, diagrams, and image queries
 2. **Image Path Resolution** → `download_stock_image()` returns relative markdown-friendly paths
-3. **Diagram Rendering** → `convert_mermaid_to_png()` generates PNG files in `./assets/<topic>/diagrams/`
+3. **Diagram Rendering** → `convert_mermaid_to_png()` generates PNG files in `assets/<topic>/diagrams/`
 4. **Markdown Assembly** → `render_marpit_markdown()` embeds images as base64 URIs or file references
-5. **File Persistence** → `save_markdown()` writes final markdown to the current working directory's `PPT/` folder
+5. **File Persistence** → `save_markdown()` writes final markdown to `PPT/` directory
 6. **PPTX Export** → `export_slides()` invokes Marp CLI with prepared markdown
 
 ## Parallel Execution
