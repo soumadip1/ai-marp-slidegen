@@ -187,20 +187,6 @@ cd my-decks
 marp-gen
 ```
 
-Typical workflow after installing into a virtual environment:
-
-```bash
-cd marp-generator
-
-# activate the environment where marp-generator was installed
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-# Windows cmd.exe:   .venv\Scripts\activate.bat
-# macOS / Linux:     source .venv/bin/activate
-
-cd ../my-decks
-marp-gen
-```
-
 At runtime, the CLI creates `PPT/`, `assets/`, and reads `.env` in the current working directory where you launch `marp-gen`. The `build/`, `dist/`, and `*.egg-info/` paths are generated packaging artifacts rather than source files.
 
 ---
